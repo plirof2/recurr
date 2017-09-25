@@ -104,10 +104,10 @@ class Rule
     /** @var string */
     protected $timezone;
 
-    /** @var \DateTime|null */
+    /** @var \DateTimeInterface|null */
     protected $startDate;
 
-    /** @var \DateTime|null */
+    /** @var \DateTimeInterface|null */
     protected $endDate;
 
     /** @var bool */
@@ -122,7 +122,7 @@ class Rule
     /** @var bool */
     protected $isExplicitInterval = false;
 
-    /** @var \DateTime|null */
+    /** @var \DateTimeInterface|null */
     protected $until;
 
     /** @var int|null */
@@ -179,15 +179,15 @@ class Rule
     /**
      * Construct a new Rule.
      *
-     * @param string           $rrule RRULE string
-     * @param string|\DateTime $startDate
-     * @param \DateTime|null   $endDate
-     * @param string           $timezone
+     * @param string                    $rrule RRULE string
+     * @param string|\DateTimeInterface $startDate
+     * @param \DateTimeInterface|null   $endDate
+     * @param string                    $timezone
      */
     public function __construct($rrule = null, $startDate = null, $endDate = null, $timezone = null)
     {
         if (empty($timezone)) {
-            if ($startDate instanceof \DateTime) {
+            if ($startDate instanceof \DateTimeInterface) {
                 $timezone = $startDate->getTimezone()->getName();
             } else {
                 $timezone = date_default_timezone_get();
@@ -195,8 +195,8 @@ class Rule
         }
         $this->setTimezone($timezone);
 
-        if (!$startDate instanceof \DateTime) {
-            $startDate  = new \DateTime($startDate, new \DateTimeZone($timezone));
+        if (!$startDate instanceof \DateTimeInterface) {
+            $startDate = new \DateTime($startDate, new \DateTimeZone($timezone));
         }
 
         $this->setStartDate($startDate);
@@ -212,10 +212,10 @@ class Rule
     /**
      * Create a Rule object based on a RRULE string.
      *
-     * @param string           $rrule RRULE string
-     * @param string|\DateTime $startDate
-     * @param \DateTime|null   $endDate
-     * @param string           $timezone
+     * @param string                    $rrule RRULE string
+     * @param string|\DateTimeInterface $startDate
+     * @param \DateTimeInterface|null   $endDate
+     * @param string                    $timezone
      *
      * @return Rule
      * @throws InvalidRRule
@@ -230,10 +230,10 @@ class Rule
     /**
      * Create a Rule object based on a RRULE array.
      *
-     * @param array            $rrule RRULE array
-     * @param string|\DateTime $startDate
-     * @param \DateTime|null   $endDate
-     * @param string           $timezone
+     * @param array                     $rrule RRULE array
+     * @param string|\DateTimeInterface $startDate
+     * @param \DateTimeInterface|null   $endDate
+     * @param string                    $timezone
      *
      * @return Rule
      * @throws InvalidRRule
@@ -302,14 +302,14 @@ class Rule
         if (isset($parts['DTSTART'])) {
             $this->isStartDateFromDtstart = true;
             $date = new \DateTime($parts['DTSTART']);
-            $date->setTimezone(new \DateTimeZone($this->getTimezone()));
+            $date = $date->setTimezone(new \DateTimeZone($this->getTimezone()));
             $this->setStartDate($date);
         }
 
         // DTEND
         if (isset($parts['DTEND'])) {
             $date = new \DateTime($parts['DTEND']);
-            $date->setTimezone(new \DateTimeZone($this->getTimezone()));
+            $date = $date->setTimezone(new \DateTimeZone($this->getTimezone()));
             $this->setEndDate($date);
         }
 
@@ -318,7 +318,7 @@ class Rule
             throw new InvalidRRule('UNTIL and COUNT must not exist together in the same RRULE');
         } elseif (isset($parts['UNTIL'])) {
             $date = new \DateTime($parts['UNTIL']);
-            $date->setTimezone(new \DateTimeZone($this->getTimezone()));
+            $date = $date->setTimezone(new \DateTimeZone($this->getTimezone()));
             $this->setUntil($date);
         } elseif (isset($parts['COUNT'])) {
             $this->setCount($parts['COUNT']);
@@ -412,7 +412,7 @@ class Rule
         if (!empty($until)) {
             if ($timezoneType === self::TZ_FIXED) {
                 $u = clone $until;
-                $u->setTimezone(new \DateTimeZone('UTC'));
+                $u = $u->setTimezone(new \DateTimeZone('UTC'));
                 $parts[] = 'UNTIL='.$u->format($format.'\Z');
             } else {
                 $parts[] = 'UNTIL='.$until->format($format);
@@ -561,7 +561,7 @@ class Rule
     }
 
     /**
-     * Get timezone to use for \DateTime() objects that are UTC.
+     * Get timezone to use for \DateTimeInterface objects that are UTC.
      *
      * @return null|string
      */
@@ -573,8 +573,8 @@ class Rule
     /**
      * This date specifies the first instance in the recurrence set.
      *
-     * @param \DateTime|null $startDate       Date of the first instance in the recurrence
-     * @param bool|null      $includeInString If true, include as DTSTART when calling getString()
+     * @param \DateTimeInterface|null $startDate       Date of the first instance in the recurrence
+     * @param bool|null               $includeInString If true, include as DTSTART when calling getString()
      *
      * @return $this
      */
@@ -590,7 +590,7 @@ class Rule
     }
 
     /**
-     * @return \DateTime
+     * @return \DateTimeInterface
      */
     public function getStartDate()
     {
@@ -600,7 +600,7 @@ class Rule
     /**
      * This date specifies the last possible instance in the recurrence set.
      *
-     * @param \DateTime|null $endDate Date of the last possible instance in the recurrence
+     * @param \DateTimeInterface|null $endDate Date of the last possible instance in the recurrence
      *
      * @return $this
      */
@@ -612,7 +612,7 @@ class Rule
     }
 
     /**
-     * @return \DateTime|null
+     * @return \DateTimeInterface|null
      */
     public function getEndDate()
     {
@@ -721,7 +721,7 @@ class Rule
     }
 
     /**
-     * Define a \DateTime value which bounds the recurrence rule in an
+     * Define a \DateTimeInterface value which bounds the recurrence rule in an
      * inclusive manner. If the value specified is synchronized with the
      * specified recurrence, this DateTime becomes the last instance of the
      * recurrence. If not present, and a COUNT is also not present, the RRULE
@@ -730,11 +730,11 @@ class Rule
      * Either UNTIL or COUNT may be specified, but UNTIL and COUNT MUST NOT
      * both be specified.
      *
-     * @param \DateTime $until The upper bound of the recurrence.
+     * @param \DateTimeInterface $until The upper bound of the recurrence.
      *
      * @return $this
      */
-    public function setUntil(\DateTime $until)
+    public function setUntil(\DateTimeInterface $until)
     {
         $this->until = $until;
         $this->count = null;
@@ -743,9 +743,9 @@ class Rule
     }
 
     /**
-     * Get the \DateTime that the recurrence lasts until.
+     * Get the \DateTimeInterface that the recurrence lasts until.
      *
-     * @return \DateTime|null
+     * @return \DateTimeInterface|null
      */
     public function getUntil()
     {
@@ -1233,19 +1233,17 @@ class Rule
      *
      * This is necessary for exclusion dates to be handled properly.
      *
-     * @param \DateTime $date
+     * @param \DateTimeInterface $date
      *
-     * @return \DateTime
+     * @return \DateTimeInterface
      */
-    private function convertZtoUtc(\DateTime $date)
+    private function convertZtoUtc(\DateTimeInterface $date)
     {
         if ($date->getTimezone()->getName() !== 'Z') {
             return $date;
         }
 
-        $date->setTimezone(new \DateTimeZone('UTC'));
-
-        return $date;
+        return $date->setTimezone(new \DateTimeZone('UTC'));
     }
 
     /**
